@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guyton-Klinger 退休提領率護欄計算器</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="py-16">
+            <h1 class="text-center">Guyton-Klinger 退休提領率護欄計算器</h1>
+            <p class="text-center text-secondary mt-8">基於 Guyton & Klinger (2006) 決策規則的動態提領率計算工具</p>
+        </header>
+
+        <main>
+            <div class="calculator-layout">
+                <!-- Input Section -->
+                <div class="card input-section">
+                    <div class="card__header">
+                        <h2>輸入參數 Input Parameters</h2>
+                    </div>
+                    <div class="card__body">
+                        <form id="calculatorForm">
+                            <div class="form-group">
+                                <label class="form-label" for="initialAssets">
+                                    初始資產 (Initial Assets)
+                                    <span class="currency-label">台幣 TWD</span>
+                                </label>
+                                <input 
+                                    type="number" 
+                                    id="initialAssets" 
+                                    class="form-control" 
+                                    value="10000000" 
+                                    min="1" 
+                                    step="1000"
+                                    required
+                                >
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="initialWithdrawalRate">
+                                    初始提領率 (Initial Withdrawal Rate)
+                                    <span class="percentage-label">%</span>
+                                </label>
+                                <input 
+                                    type="number" 
+                                    id="initialWithdrawalRate" 
+                                    class="form-control" 
+                                    value="4.0" 
+                                    min="0.1" 
+                                    max="20" 
+                                    step="0.1"
+                                    required
+                                >
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="returnRate">
+                                    當年度投報率 (Annual Return Rate)
+                                    <span class="percentage-label">%</span>
+                                </label>
+                                <input 
+                                    type="number" 
+                                    id="returnRate" 
+                                    class="form-control" 
+                                    value="7.0" 
+                                    min="-50" 
+                                    max="50" 
+                                    step="0.1"
+                                    required
+                                >
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="inflationRate">
+                                    當年度通膨率 (Inflation Rate)
+                                    <span class="percentage-label">%</span>
+                                </label>
+                                <input 
+                                    type="number" 
+                                    id="inflationRate" 
+                                    class="form-control" 
+                                    value="2.0" 
+                                    min="-10" 
+                                    max="20" 
+                                    step="0.1"
+                                    required
+                                >
+                            </div>
+
+                            <button type="submit" class="btn btn--primary btn--full-width">
+                                計算 Calculate
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Results Section -->
+                <div class="card results-section" id="resultsSection" style="display: none;">
+                    <div class="card__header">
+                        <h2>計算結果 Calculation Results</h2>
+                    </div>
+                    <div class="card__body">
+                        <!-- Current Year Results -->
+                        <div class="results-group">
+                            <h3>當年度數據 Current Year Data</h3>
+                            <div class="results-grid">
+                                <div class="result-item">
+                                    <span class="result-label">當年度提領金額<br>Current Withdrawal Amount</span>
+                                    <span class="result-value" id="currentWithdrawalAmount">-</span>
+                                </div>
+                                <div class="result-item">
+                                    <span class="result-label">年底資產餘額<br>Year-end Assets</span>
+                                    <span class="result-value" id="yearEndAssets">-</span>
+                                </div>
+                                <div class="result-item">
+                                    <span class="result-label">當前提領率<br>Current Withdrawal Rate</span>
+                                    <span class="result-value" id="currentWithdrawalRate">-</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Guardrail Status -->
+                        <div class="results-group">
+                            <h3>護欄狀態 Guardrail Status</h3>
+                            <div class="guardrail-status" id="guardrailStatus">
+                                <div class="status-indicator" id="statusIndicator">
+                                    <span class="status-text" id="statusText">-</span>
+                                </div>
+                                <div class="status-explanation" id="statusExplanation">-</div>
+                            </div>
+                        </div>
+
+                        <!-- Next Year Projections -->
+                        <div class="results-group">
+                            <h3>下年度建議 Next Year Recommendations</h3>
+                            <div class="results-grid">
+                                <div class="result-item">
+                                    <span class="result-label">下年度建議提領金額<br>Next Year Withdrawal Amount</span>
+                                    <span class="result-value" id="nextYearWithdrawalAmount">-</span>
+                                </div>
+                                <div class="result-item">
+                                    <span class="result-label">下年度提領率<br>Next Year Withdrawal Rate</span>
+                                    <span class="result-value" id="nextYearWithdrawalRate">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rules Explanation -->
+            <div class="card rules-section mt-24">
+                <div class="card__header">
+                    <h2>Guyton-Klinger 決策規則說明</h2>
+                </div>
+                <div class="card__body">
+                    <div class="rules-grid">
+                        <div class="rule-item">
+                            <h4 class="rule-title guardrail-lower">資本保護規則 (下護欄)</h4>
+                            <p class="rule-description">
+                                <strong>觸發條件：</strong>當前提領率 > 初始提領率 × 1.2<br>
+                                <strong>執行動作：</strong>下年度提領金額減少 10%<br>
+                                <strong>目的：</strong>在市場表現不佳時保護資本，避免過度提領
+                            </p>
+                        </div>
+                        
+                        <div class="rule-item">
+                            <h4 class="rule-title guardrail-upper">繁榮規則 (上護欄)</h4>
+                            <p class="rule-description">
+                                <strong>觸發條件：</strong>當前提領率 < 初始提領率 × 0.8<br>
+                                <strong>執行動作：</strong>下年度提領金額增加 10%<br>
+                                <strong>目的：</strong>在市場表現良好時允許增加提領，提高生活品質
+                            </p>
+                        </div>
+                        
+                        <div class="rule-item">
+                            <h4 class="rule-title guardrail-normal">通膨調整規則</h4>
+                            <p class="rule-description">
+                                <strong>正常情況：</strong>提領金額按通膨率調整以維持購買力<br>
+                                <strong>特殊情況：</strong>若投報率為負且當前提領率高於初始提領率，則跳過通膨調整<br>
+                                <strong>目的：</strong>平衡購買力保護與資本保存
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="reference mt-16">
+                        <p class="reference-text">
+                            <strong>參考文獻：</strong>Guyton, J., & Klinger, W. (2006). Decision Rules and Maximum Initial Withdrawal Rates. Journal of Financial Planning.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
